@@ -73,9 +73,9 @@ public class AiService {
             }
         }
 
-        // 成交区间 ±12%，并对下限做兜底（不低于 3 元、不高于原价 9 折）
-        double low = Math.max(3.0, base * 0.88);
+        // 上限先按原价 9 折收敛，再让下限不得越过上限，避免低价教材出现 low > high 的倒挂区间
         double high = Math.min(original.doubleValue() * 0.9, base * 1.12);
+        double low = Math.min(Math.max(3.0, base * 0.88), high);
         BigDecimal suggested = round(base);
         if (suggested.compareTo(BigDecimal.valueOf(low)) < 0) {
             suggested = round(low);
