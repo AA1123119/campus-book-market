@@ -3,6 +3,7 @@ package com.campus.bookmarket.auth;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.Base64;
 
 /**
@@ -11,10 +12,21 @@ import java.util.Base64;
  */
 public final class TokenUtil {
 
-    private static final String SECRET = "campus-book-market-secret-2026";
+    /** 仅供本地开发；生产通过 app.token.secret（或 APP_TOKEN_SECRET 环境变量）注入，见 WebConfig */
+    private static final String DEFAULT_SECRET = "dev-only-secret-change-me";
+
+    private static volatile String secret = DEFAULT_SECRET;
+
     private static final long TTL = 7L * 24 * 60 * 60 * 1000;
 
     private TokenUtil() {
+    }
+
+    /** 启动时由 WebConfig 注入配置中的密钥；为空则保留开发默认值 */
+    public static void configure(String value) {
+        if (value != null && !value.isBlank()) {
+            secret = value;
+        }
     }
 
     public static String create(Long userId) {
@@ -32,7 +44,10 @@ public final class TokenUtil {
             if (parts.length != 3) {
                 return null;
             }
-            if (!sign(parts[0] + "." + parts[1]).equals(parts[2])) {
+            // 恒定时间比较，避免通过响应时间差异猜测签名
+            String expected = sign(parts[0] + "." + parts[1]);
+            if (!MessageDigest.isEqual(expected.getBytes(StandardCharsets.UTF_8),
+                    parts[2].getBytes(StandardCharsets.UTF_8))) {
                 return null;
             }
             if (Long.parseLong(parts[1]) < System.currentTimeMillis()) {
@@ -47,7 +62,7 @@ public final class TokenUtil {
     private static String sign(String raw) {
         try {
             Mac mac = Mac.getInstance("HmacSHA256");
-            mac.init(new SecretKeySpec(SECRET.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
+            mac.init(new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
             byte[] bytes = mac.doFinal(raw.getBytes(StandardCharsets.UTF_8));
             StringBuilder sb = new StringBuilder();
             for (byte b : bytes) {
