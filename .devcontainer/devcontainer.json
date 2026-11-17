@@ -1,0 +1,30 @@
+{
+  "name": "书适圈 · 校园二手书智能交易",
+  "image": "mcr.microsoft.com/devcontainers/java:1-17-bullseye",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "20"
+    },
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "version": "latest"
+    }
+  },
+  "forwardPorts": [8080, 5173],
+  "portsAttributes": {
+    "8080": { "label": "backend", "onAutoForward": "silent" },
+    "5173": { "label": "frontend", "onAutoForward": "openPreview" }
+  },
+  "postCreateCommand": "cd backend && ./mvnw -q -DskipTests package || true; cd ../frontend && npm install",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "vscjava.vscode-java-pack",
+        "vmware.vscode-spring-boot",
+        "Vue.volar",
+        "esbenp.prettier-vscode",
+        "GitHub.copilot"
+      ]
+    }
+  },
+  "remoteUser": "vscode"
+}
