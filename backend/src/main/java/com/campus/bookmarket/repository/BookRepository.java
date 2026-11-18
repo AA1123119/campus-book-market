@@ -2,6 +2,7 @@ package com.campus.bookmarket.repository;
 
 import com.campus.bookmarket.entity.Book;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -28,6 +29,11 @@ public interface BookRepository extends JpaRepository<Book, Long> {
                       @Param("campus") String campus);
 
     List<Book> findTop10ByStatusOrderByViewCountDesc(String status);
+
+    /** 抢占式锁定：仅当书籍仍是在售状态时才置为 LOCKED，返回受影响行数，0 表示被他人抢先 */
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("update Book b set b.status = 'LOCKED' where b.id = :id and b.status = 'ON_SALE'")
+    int lockForSale(@Param("id") Long id);
 
     List<Book> findTop10ByCategoryAndStatusOrderByViewCountDesc(String category, String status);
 
