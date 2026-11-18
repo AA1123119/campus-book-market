@@ -52,7 +52,7 @@ public class OrderController {
     }
 
     @GetMapping("/{id}")
-    public ApiResponse<BookOrder> detail(@PathVariable Long id) {
-        return ApiResponse.ok(orderService.get(id));
+    public ApiResponse<BookOrder> detail(@PathVariable Long id, @CurrentUser User user) {
+        return ApiResponse.ok(orderService.getForUser(id, AuthSupport.require(user)));
     }
 }

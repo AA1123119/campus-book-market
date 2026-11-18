@@ -20,15 +20,28 @@ const statusText = {
 const statusType = { PENDING: 'warning', CONFIRMED: 'primary', COMPLETED: 'success', CANCELLED: 'info' }
 
 async function load() {
-  bought.value = await api.boughtOrders()
-  sold.value = await api.soldOrders()
+  try {
+    const [boughtList, soldList] = await Promise.all([api.boughtOrders(), api.soldOrders()])
+    bought.value = boughtList
+    sold.value = soldList
+  } catch (e) {
+    ElMessage.error(e?.message || '订单加载失败，请稍后重试')
+  }
 }
 
 async function act(fn, order, text) {
-  await ElMessageBox.confirm(text, '提示', { type: 'warning' })
-  await fn(order.id)
-  ElMessage.success('操作成功')
-  await load()
+  try {
+    await ElMessageBox.confirm(text, '提示', { type: 'warning' })
+  } catch {
+    return // 用户点了取消
+  }
+  try {
+    await fn(order.id)
+    ElMessage.success('操作成功')
+    await load()
+  } catch (e) {
+    ElMessage.error(e?.message || '操作失败')
+  }
 }
 
 function openReview(order) {

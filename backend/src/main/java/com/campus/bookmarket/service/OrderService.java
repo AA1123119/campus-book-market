@@ -23,7 +23,7 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final BookRepository bookRepository;
 
-    /** 下单：书籍进入 LOCKED，避免一物多卖（并发场景由乐观锁/唯一索引兜底） */
+    /** 下单：书籍进入 LOCKED，避免一物多卖（条件更新保证并发下只有一人抢到） */
     @Transactional
     public BookOrder create(TradeDtos.OrderRequest req, User buyer) {
         Book book = bookRepository.findById(req.getBookId())
@@ -34,8 +34,10 @@ public class OrderService {
         if (book.getSellerId().equals(buyer.getId())) {
             throw new BusinessException("不能购买自己发布的书籍");
         }
-        book.setStatus("LOCKED");
-        bookRepository.save(book);
+        // 抢占式锁定：受影响行数为 0 说明期间已被别人下单
+        if (bookRepository.lockForSale(book.getId()) == 0) {
+            throw new BusinessException("该书已被预订或已售出");
+        }
 
         BookOrder order = new BookOrder();
         order.setOrderNo("BM" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"))
@@ -112,5 +114,14 @@ public class OrderService {
 
     public BookOrder get(Long id) {
         return orderRepository.findById(id).orElseThrow(() -> new BusinessException(404, "订单不存在"));
+    }
+
+    /** 详情查询：仅买卖双方可见，防止遍历 id 越权读取他人订单 */
+    public BookOrder getForUser(Long id, User user) {
+        BookOrder order = get(id);
+        if (!order.getBuyerId().equals(user.getId()) && !order.getSellerId().equals(user.getId())) {
+            throw new BusinessException(403, "无权查看该订单");
+        }
+        return order;
     }
 }
