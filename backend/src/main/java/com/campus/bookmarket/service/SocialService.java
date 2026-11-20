@@ -64,7 +64,15 @@ public class SocialService {
         List<Review> reviews = reviewRepository.findByToUserIdOrderByCreatedAtDesc(userId);
         double avg = reviews.stream().mapToInt(Review::getRating).average().orElse(5.0);
         Map<String, Object> res = new LinkedHashMap<>();
-        res.put("user", user);
+        // 该接口不要求登录，不能直接返回 User 实体（会带出 password / phone）
+        Map<String, Object> brief = new LinkedHashMap<>();
+        brief.put("id", user.getId());
+        brief.put("username", user.getUsername());
+        brief.put("nickname", user.getNickname());
+        brief.put("campus", user.getCampus());
+        brief.put("creditScore", user.getCreditScore());
+        brief.put("createdAt", user.getCreatedAt());
+        res.put("user", brief);
         res.put("reviews", reviews);
         res.put("avgRating", Math.round(avg * 10) / 10.0);
         return res;
@@ -117,7 +125,8 @@ public class SocialService {
         return reportRepository.save(report);
     }
 
-    public List<Report> reports(String status) {
+    public List<Report> reports(String status, User admin) {
+        requireAdmin(admin);
         return status == null || status.isBlank()
                 ? reportRepository.findAllByOrderByCreatedAtDesc()
                 : reportRepository.findByStatusOrderByCreatedAtDesc(status);
@@ -126,17 +135,18 @@ public class SocialService {
     /** 审核处理：通过则下架违规书籍或封禁用户（信用分清零） */
     @Transactional
     public Report handle(Long id, TradeDtos.HandleRequest req, User admin) {
-        if (!"ADMIN".equals(admin.getRole())) {
-            throw new BusinessException(403, "需要管理员权限");
-        }
+        requireAdmin(admin);
         Report report = reportRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(404, "举报记录不存在"));
+        if (!"PENDING".equals(report.getStatus())) {
+            throw new BusinessException("该举报已处理，不能重复操作");
+        }
         report.setStatus(req.getStatus());
         report.setHandleRemark(req.getRemark());
         if ("APPROVED".equals(req.getStatus())) {
             if ("BOOK".equals(report.getTargetType())) {
-                bookRepository.findById(report.getTargetId()).ifPresent(b -> b.setStatus("OFF_SHELF"));
                 bookRepository.findById(report.getTargetId()).ifPresent(b -> {
+                    b.setStatus("OFF_SHELF");
                     userRepository.findById(b.getSellerId()).ifPresent(u ->
                             u.setCreditScore(Math.max(0, u.getCreditScore() - 5)));
                 });
@@ -147,14 +157,21 @@ public class SocialService {
         return report;
     }
 
-    public Map<String, Object> dashboard() {
+    public Map<String, Object> dashboard(User admin) {
+        requireAdmin(admin);
         Map<String, Object> res = new LinkedHashMap<>();
         res.put("onSaleBooks", bookRepository.countByStatus("ON_SALE"));
         res.put("soldBooks", bookRepository.countByStatus("SOLD"));
         res.put("totalOrders", orderRepository.count());
         res.put("completedOrders", orderRepository.countByStatus("COMPLETED"));
-        res.put("pendingReports", reportRepository.findByStatusOrderByCreatedAtDesc("PENDING").size());
+        res.put("pendingReports", reportRepository.countByStatus("PENDING"));
         res.put("totalUsers", userRepository.count());
         return res;
+    }
+
+    private void requireAdmin(User user) {
+        if (user == null || !"ADMIN".equals(user.getRole())) {
+            throw new BusinessException(403, "需要管理员权限");
+        }
     }
 }

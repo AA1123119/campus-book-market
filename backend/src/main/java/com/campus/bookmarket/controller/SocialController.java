@@ -60,8 +60,7 @@ public class SocialController {
     @GetMapping("/admin/reports")
     public ApiResponse<List<Report>> reports(@RequestParam(required = false) String status,
                                              @CurrentUser User user) {
-        AuthSupport.require(user);
-        return ApiResponse.ok(socialService.reports(status));
+        return ApiResponse.ok(socialService.reports(status, AuthSupport.require(user)));
     }
 
     @PostMapping("/admin/reports/{id}/handle")
@@ -73,7 +72,6 @@ public class SocialController {
 
     @GetMapping("/admin/dashboard")
     public ApiResponse<Map<String, Object>> dashboard(@CurrentUser User user) {
-        AuthSupport.require(user);
-        return ApiResponse.ok(socialService.dashboard());
+        return ApiResponse.ok(socialService.dashboard(AuthSupport.require(user)));
     }
 }
