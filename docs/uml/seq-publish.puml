@@ -1,0 +1,51 @@
+@startuml
+skinparam defaultFontName "Microsoft YaHei"
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam sequence {
+  ArrowColor #3A7AFE
+  LifeLineBorderColor #B9C6E4
+  ParticipantBackgroundColor #EEF3FF
+  ParticipantBorderColor #3A7AFE
+  ActorBackgroundColor #FFF4E6
+  ActorBorderColor #E6A23C
+}
+
+
+actor "卖家" as S
+participant "PublishPage\n(边界类)" as P
+participant "AiController" as AC
+participant "AiService\nCBM-Pricing-v1" as AS
+participant "BookController" as BC
+participant "BookService" as BS
+database "t_book" as DB
+
+S -> P : 输入 ISBN 并点击"AI 识别"
+P -> AC : GET /api/ai/isbn/{isbn}
+AC -> AS : isbnLookup(isbn)
+AS --> AC : 书名/作者/出版社/原价/分类
+AC --> P : ApiResponse<IsbnResult>
+P -> P : 回填表单，展示书名与分类
+
+S -> P : 选择成色（4 成新）
+P -> AC : POST /api/ai/price-suggestion
+AC -> AS : suggestPrice(isbn, category, originalPrice, conditionLevel)
+AS -> DB : 查询同 ISBN 在售均价与在售数量
+DB --> AS : 同款记录列表
+AS -> AS : 原价 × 学科系数 × 成色系数 × 供需修正
+AS --> AC : 建议价 23.99 / 区间 [21.11, 26.87] / 置信度 0.72 / 定价理由
+AC --> P : PriceSuggestionResponse
+P -> P : 展示"定价依据"并对售价赋初值
+
+S -> P : 点击"立即发布"
+P -> BC : POST /api/books {title, price, ...}
+BC -> BC : 校验登录态与参数（@Valid）
+BC -> BS : publish(req, currentUser)
+BS -> BS : 补全卖家信息、状态置 ON_SALE、生成封面
+BS -> DB : insert t_book
+DB --> BS : 新书记录
+BS --> BC : Book
+BC --> P : ApiResponse<Book>
+P --> S : 跳转详情页并提示发布成功
+
+@enduml

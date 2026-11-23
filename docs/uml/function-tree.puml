@@ -1,0 +1,50 @@
+@startmindmap
+<style>
+mindmapDiagram {
+  node {
+    BackgroundColor #EEF3FF
+    BorderColor #3A7AFE
+    FontColor #1F2D3D
+    Padding 8
+    RoundCorner 10
+  }
+  rootNode {
+    BackgroundColor #2D5BFF
+    FontColor white
+    FontSize 17
+  }
+  :depth(1) {
+    BackgroundColor #DCE7FF
+    FontSize 15
+  }
+}
+</style>
+skinparam defaultFontName "Microsoft YaHei"
+skinparam backgroundColor #FFFFFF
+
+* 书适圈·校园二手书智能交易平台
+** 用户与认证
+*** 注册 / 登录（校园身份）
+*** 个人资料与校区管理
+*** 信用分体系
+** 书籍发布
+*** ISBN 扫码识别
+*** AI 智能定价建议
+*** AI 卖点文案生成
+*** 图片与成色登记
+*** 书籍编辑 / 下架
+** 书籍交易
+*** 关键词搜索与筛选
+*** 分类 / 校区 / 价格排序
+*** 个性化推荐
+*** 下单与订单状态流转
+*** 校内面交 / 驿站自提
+** 互动与信用
+*** 站内消息沟通
+*** 交易评价与信用分联动
+*** 举报违规内容
+** 运营管理
+*** 举报审核处理
+*** 平台数据看板
+*** 违规下架 / 封禁
+@endmindmap

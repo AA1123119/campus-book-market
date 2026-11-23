@@ -1,0 +1,115 @@
+@startuml
+skinparam defaultFontName "Microsoft YaHei"
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam class {
+  BackgroundColor #FFFFFF
+  BorderColor #3A7AFE
+  ArrowColor #3A7AFE
+}
+
+
+package "边界类 Boundary" {
+  class BookListPage <<boundary>> {
+    + search(keyword, category)
+    + showRecommend()
+  }
+  class PublishPage <<boundary>> {
+    + inputIsbn()
+    + showPriceSuggestion()
+    + submit()
+  }
+  class BookDetailPage <<boundary>> {
+    + showDetail()
+    + placeOrder()
+    + report()
+  }
+  class OrderPage <<boundary>> {
+    + listBought()
+    + listSold()
+    + review()
+  }
+}
+
+package "控制类 Control" {
+  class BookController <<control>> {
+    + search()
+    + publish()
+    + recommend()
+  }
+  class AiController <<control>> {
+    + priceSuggestion()
+    + isbnLookup()
+  }
+  class OrderController <<control>> {
+    + create()
+    + confirm()
+    + complete()
+    + cancel()
+  }
+  class SocialController <<control>> {
+    + review()
+    + report()
+    + handleReport()
+  }
+}
+
+package "实体类 Entity" {
+  class User {
+    - id : Long
+    - nickname : String
+    - campus : String
+    - creditScore : Integer
+    - role : String
+  }
+  class Book {
+    - id : Long
+    - title : String
+    - isbn : String
+    - category : String
+    - conditionLevel : Integer
+    - price : BigDecimal
+    - status : String
+  }
+  class BookOrder {
+    - id : Long
+    - orderNo : String
+    - amount : BigDecimal
+    - tradeType : String
+    - status : String
+  }
+  class Review {
+    - id : Long
+    - rating : Integer
+    - content : String
+  }
+  class Report {
+    - id : Long
+    - targetType : String
+    - reason : String
+    - status : String
+  }
+}
+
+BookListPage --> BookController
+PublishPage --> BookController
+PublishPage --> AiController
+BookDetailPage --> OrderController
+BookDetailPage --> SocialController
+OrderPage --> OrderController
+OrderPage --> SocialController
+
+BookController ..> Book
+AiController ..> Book
+OrderController ..> BookOrder
+OrderController ..> Book
+SocialController ..> Review
+SocialController ..> Report
+
+User "1" --> "0..*" Book : 发布
+User "1" --> "0..*" BookOrder : 购买
+Book "1" --> "0..*" BookOrder : 被下单
+BookOrder "1" --> "0..2" Review : 产生
+User "1" --> "0..*" Report : 提交
+
+@enduml
