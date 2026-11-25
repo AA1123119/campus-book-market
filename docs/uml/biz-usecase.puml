@@ -1,0 +1,48 @@
+@startuml
+skinparam defaultFontName "Microsoft YaHei"
+skinparam backgroundColor #FFFFFF
+skinparam usecase {
+  BackgroundColor #EEF3FF
+  BorderColor #3A7AFE
+  FontColor #1F2D3D
+}
+skinparam actor {
+  BackgroundColor #FFF4E6
+  BorderColor #E6A23C
+}
+skinparam shadowing false
+skinparam packageStyle rectangle
+
+
+left to right direction
+
+actor "学生（卖家）" as Seller
+actor "学生（买家）" as Buyer
+actor "平台运营管理员" as Admin
+actor "校园统一认证\n（外部系统）" as CAS
+actor "AI 定价服务\n（外部系统）" as AI
+
+rectangle "校园二手书智能交易业务" {
+  usecase "发布闲置教材" as UC1
+  usecase "浏览与检索教材" as UC2
+  usecase "达成交易" as UC3
+  usecase "完成交付与评价" as UC4
+  usecase "维护平台秩序" as UC5
+  usecase "身份核验" as UC6
+  usecase "获取定价建议" as UC7
+}
+
+Seller --> UC1
+Buyer --> UC2
+Seller --> UC3
+Buyer --> UC3
+Seller --> UC4
+Buyer --> UC4
+Admin --> UC5
+
+UC1 ..> UC6 : <<include>>
+UC2 ..> UC6 : <<include>>
+UC1 ..> UC7 : <<include>>
+UC5 ..> AI : 违规内容辅助判别
+
+@enduml

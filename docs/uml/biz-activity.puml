@@ -1,0 +1,62 @@
+@startuml
+skinparam defaultFontName "Microsoft YaHei"
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam ActivityBackgroundColor #EEF3FF
+skinparam ActivityBorderColor #3A7AFE
+skinparam ActivityDiamondBackgroundColor #FFF4E6
+skinparam ActivityDiamondBorderColor #E6A23C
+
+
+|学生（卖家）|
+start
+:整理闲置教材;
+:扫描 ISBN 录入书籍信息;
+:填写成色与使用情况;
+:查看 AI 定价建议;
+if (接受建议价?) then (是)
+  :采用建议价;
+else (否)
+  :手动调整价格;
+endif
+:提交发布，书籍进入在售池;
+|平台|
+:审核书籍信息\n（违规词/图片人工抽检）;
+if (审核通过?) then (否)
+  |学生（卖家）|
+  :收到驳回通知;
+  :修改后重新提交;
+  stop
+else (是)
+  |学生（买家）|
+  :按课程/分类检索教材;
+  :查看详情与卖家信用分;
+  if (是否满意?) then (否)
+    :继续浏览其他书籍;
+    stop
+  else (是)
+    :提交订单，书籍锁定;
+  endif
+endif
+|学生（卖家）|
+:确认订单并约定面交地点;
+|学生（买家）|
+:线下当面验收书籍;
+if (书籍与描述一致?) then (否)
+  :申请取消订单;
+  |平台|
+  :书籍回到在售池;
+  stop
+else (是)
+  :确认收货;
+endif
+|平台|
+:订单完成，金额结算;
+:触发信用分与评价入口;
+|学生（买家）|
+:评价卖家;
+|学生（卖家）|
+:评价买家;
+stop
+
+@enduml

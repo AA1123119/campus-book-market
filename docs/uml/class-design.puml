@@ -1,0 +1,145 @@
+@startuml
+skinparam defaultFontName "Microsoft YaHei"
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam class {
+  BackgroundColor #FFFFFF
+  BorderColor #3A7AFE
+  ArrowColor #3A7AFE
+  FontSize 12
+}
+
+
+class User {
+  - id : Long
+  - username : String
+  - password : String
+  - nickname : String
+  - campus : String
+  - phone : String
+  - role : String
+  - creditScore : Integer
+  - createdAt : LocalDateTime
+  + adjustCredit(delta : int)
+  + isAdmin() : boolean
+}
+
+class Book {
+  - id : Long
+  - title : String
+  - author : String
+  - isbn : String
+  - publisher : String
+  - category : String
+  - conditionLevel : Integer
+  - originalPrice : BigDecimal
+  - price : BigDecimal
+  - description : String
+  - coverUrl : String
+  - status : BookStatus
+  - sellerId : Long
+  - campus : String
+  - viewCount : Integer
+  + isOnSale() : boolean
+  + lock() : void
+  + markSold() : void
+}
+
+class BookOrder {
+  - id : Long
+  - orderNo : String
+  - bookId : Long
+  - buyerId : Long
+  - sellerId : Long
+  - amount : BigDecimal
+  - tradeType : TradeType
+  - tradePlace : String
+  - status : OrderStatus
+  - createdAt : LocalDateTime
+  - finishedAt : LocalDateTime
+  + confirm() : void
+  + complete() : void
+  + cancel() : void
+}
+
+class Review {
+  - id : Long
+  - orderId : Long
+  - fromUserId : Long
+  - toUserId : Long
+  - rating : Integer
+  - content : String
+  + isValidRating() : boolean
+}
+
+class Message {
+  - id : Long
+  - fromUserId : Long
+  - toUserId : Long
+  - bookId : Long
+  - content : String
+  - readFlag : Boolean
+  - createdAt : LocalDateTime
+  + markRead() : void
+}
+
+class Report {
+  - id : Long
+  - targetType : String
+  - targetId : Long
+  - reporterId : Long
+  - reason : String
+  - status : String
+  - handleRemark : String
+  + approve() : void
+  + reject(remark : String) : void
+}
+
+class PriceSuggestion {
+  - suggestedPrice : BigDecimal
+  - lowBound : BigDecimal
+  - highBound : BigDecimal
+  - confidence : Double
+  - reason : String
+  + explain() : String
+}
+
+class AiService {
+  + suggestPrice(isbn, category, originalPrice, conditionLevel) : PriceSuggestion
+  + isbnLookup(isbn) : BookMeta
+  + generateDescription(book) : String
+}
+
+enum BookStatus {
+  ON_SALE
+  LOCKED
+  SOLD
+  OFF_SHELF
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
+enum TradeType {
+  FACE_TO_FACE
+  SELF_PICKUP
+}
+
+User "1" -- "0..*" Book : 发布 >
+User "1" -- "0..*" BookOrder : 买入 >
+User "1" -- "0..*" BookOrder : 卖出 >
+Book "1" -- "0..1" BookOrder : 对应 >
+BookOrder "1" -- "0..2" Review : 互评 >
+User "1" -- "0..*" Message : 发送 >
+User "1" -- "0..*" Report : 举报 >
+Book ..> BookStatus
+BookOrder ..> OrderStatus
+BookOrder ..> TradeType
+AiService ..> PriceSuggestion : 生成 >
+AiService ..> Book : 读取行情 >
+
+@enduml

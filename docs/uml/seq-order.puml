@@ -1,0 +1,58 @@
+@startuml
+skinparam defaultFontName "Microsoft YaHei"
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam sequence {
+  ArrowColor #3A7AFE
+  LifeLineBorderColor #B9C6E4
+  ParticipantBackgroundColor #EEF3FF
+  ParticipantBorderColor #3A7AFE
+  ActorBackgroundColor #FFF4E6
+  ActorBorderColor #E6A23C
+}
+
+
+actor "买家" as B
+participant "BookDetailPage\n(边界类)" as P
+participant "OrderController" as OC
+participant "OrderService" as OS
+database "t_book" as DB1
+database "t_order" as DB2
+
+B -> P : 点击"立即下单"
+P -> P : 弹出确认框（交易方式 / 地点）
+B -> P : 选择"校内面交"，填写"图书馆一楼大厅"
+P -> OC : POST /api/orders {bookId, tradeType, tradePlace}
+OC -> OC : AuthInterceptor 解析令牌，注入 @CurrentUser
+OC -> OS : create(req, buyer)
+
+OS -> DB1 : select * from t_book where id = ?
+DB1 --> OS : Book(status=ON_SALE, sellerId)
+
+alt 书籍已下架 / 已被预订
+  OS --> OC : throw BusinessException("该书已被预订或已售出")
+  OC --> P : {code:400, message}
+  P --> B : 提示失败原因
+else 校验通过
+  alt sellerId == buyerId
+    OS --> OC : throw BusinessException("不能购买自己发布的书籍")
+    OC --> P : {code:400}
+  else 正常下单
+    OS -> DB1 : update t_book set status = 'LOCKED'
+    OS -> OS : 生成订单号 BM + 时间戳 + 随机数
+    OS -> DB2 : insert t_order(status = PENDING)
+    DB2 --> OS : 订单主键
+    OS --> OC : BookOrder
+    OC --> P : ApiResponse<BookOrder>
+    P --> B : 提示"下单成功，等待卖家确认"
+  end
+end
+
+note over DB1, DB2
+  一物多卖的并发兜底：
+  1) 下单前置校验 status = ON_SALE；
+  2) 书籍状态机 LOCKED 阻断二次下单；
+  3) 订单号唯一索引防止重复提交。
+end note
+
+@enduml

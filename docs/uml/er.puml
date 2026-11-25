@@ -1,0 +1,104 @@
+@startuml
+skinparam defaultFontName "Microsoft YaHei"
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam linetype ortho
+hide circle
+
+
+entity "t_user 用户" as user {
+  * id : bigint <<PK>>
+  --
+  * username : varchar(32) <<UK>>
+  * password : varchar(64)
+  nickname : varchar(32)
+  campus : varchar(32)
+  phone : varchar(20)
+  * role : varchar(16)
+  * credit_score : int
+  * created_at : datetime
+}
+
+entity "t_book 书籍" as book {
+  * id : bigint <<PK>>
+  --
+  * title : varchar(128)
+  author : varchar(64)
+  isbn : varchar(32)
+  publisher : varchar(64)
+  category : varchar(32)
+  * condition_level : int
+  original_price : decimal(10,2)
+  * price : decimal(10,2)
+  description : varchar(500)
+  cover_url : varchar(255)
+  * status : varchar(16)
+  * seller_id : bigint <<FK>>
+  seller_name : varchar(32)
+  campus : varchar(32)
+  * view_count : int
+  * created_at : datetime
+}
+
+entity "t_order 订单" as orders {
+  * id : bigint <<PK>>
+  * order_no : varchar(32) <<UK>>
+  * book_id : bigint <<FK>>
+  book_title : varchar(128)
+  * buyer_id : bigint <<FK>>
+  buyer_name : varchar(32)
+  * seller_id : bigint <<FK>>
+  seller_name : varchar(32)
+  * amount : decimal(10,2)
+  trade_type : varchar(16)
+  trade_place : varchar(64)
+  * status : varchar(16)
+  * created_at : datetime
+  finished_at : datetime
+}
+
+entity "t_review 评价" as review {
+  * id : bigint <<PK>>
+  * order_id : bigint <<FK>>
+  * from_user_id : bigint <<FK>>
+  from_user_name : varchar(32)
+  * to_user_id : bigint <<FK>>
+  * rating : int
+  content : varchar(300)
+  * created_at : datetime
+}
+
+entity "t_message 消息" as message {
+  * id : bigint <<PK>>
+  * from_user_id : bigint <<FK>>
+  * to_user_id : bigint <<FK>>
+  book_id : bigint
+  * content : varchar(500)
+  * read_flag : boolean
+  * created_at : datetime
+}
+
+entity "t_report 举报" as report {
+  * id : bigint <<PK>>
+  target_type : varchar(16)
+  target_id : bigint
+  target_title : varchar(128)
+  * reporter_id : bigint <<FK>>
+  reporter_name : varchar(32)
+  reason : varchar(300)
+  * status : varchar(16)
+  handle_remark : varchar(300)
+  * created_at : datetime
+}
+
+user ||--o{ book : "发布 1:N"
+user ||--o{ orders : "买入 1:N"
+user ||--o{ orders : "卖出 1:N"
+book ||--o| orders : "被下单 1:0..1"
+orders ||--o{ review : "产生 1:0..2"
+user ||--o{ review : "收到 1:N"
+user ||--o{ message : "发送 1:N"
+user ||--o{ report : "提交 1:N"
+book ||--o{ report : "被举报 1:N"
+
+@enduml

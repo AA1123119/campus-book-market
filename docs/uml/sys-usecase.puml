@@ -1,0 +1,72 @@
+@startuml
+skinparam defaultFontName "Microsoft YaHei"
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam usecase {
+  BackgroundColor #EEF3FF
+  BorderColor #3A7AFE
+  FontColor #1F2D3D
+}
+skinparam actor {
+  BackgroundColor #FFF4E6
+  BorderColor #E6A23C
+}
+skinparam rectangle {
+  BackgroundColor #FAFBFF
+  BorderColor #B9C6E4
+}
+
+
+left to right direction
+actor "学生用户" as U
+actor "管理员" as A
+actor "AI 定价服务" as AI
+actor "校园身份认证" as CAS
+
+rectangle "书适圈平台" {
+  usecase "注册 / 登录" as UC01
+  usecase "浏览与检索书籍" as UC02
+  usecase "查看书籍详情" as UC03
+  usecase "发布书籍" as UC04
+  usecase "管理我的书籍" as UC05
+  usecase "提交订单" as UC06
+  usecase "确认订单" as UC07
+  usecase "确认收货" as UC08
+  usecase "取消订单" as UC09
+  usecase "评价交易" as UC10
+  usecase "站内消息沟通" as UC11
+  usecase "举报违规" as UC12
+  usecase "审核举报" as UC13
+  usecase "查看平台看板" as UC14
+  usecase "智能定价" as UC15
+  usecase "ISBN 识别" as UC16
+  usecase "身份核验" as UC17
+  usecase "个性化推荐" as UC18
+}
+
+U --> UC01
+U --> UC02
+U --> UC04
+U --> UC05
+U --> UC06
+U --> UC07
+U --> UC08
+U --> UC09
+U --> UC10
+U --> UC11
+U --> UC12
+A --> UC13
+A --> UC14
+
+UC02 <.. UC03 : <<extend>>\n（选中书籍）
+UC02 <.. UC18 : <<extend>>\n（登录用户）
+UC04 ..> UC15 : <<include>>
+UC04 ..> UC16 : <<include>>
+UC06 ..> UC17 : <<include>>
+UC01 ..> UC17 : <<include>>
+UC13 ..> UC12 : <<include>>
+
+UC15 --> AI
+UC17 --> CAS
+
+@enduml

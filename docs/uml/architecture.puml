@@ -1,0 +1,97 @@
+@startuml
+skinparam defaultFontName "Microsoft YaHei"
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam componentStyle rectangle
+skinparam component {
+  BackgroundColor #EEF3FF
+  BorderColor #3A7AFE
+}
+skinparam database {
+  BackgroundColor #FFF4E6
+  BorderColor #E6A23C
+}
+
+
+package "表现层 View（Vue 3 SPA）" {
+  [首页 / 检索] as V1
+  [发布页（AI 定价）] as V2
+  [详情 / 下单] as V3
+  [订单 / 个人中心] as V4
+  [管理后台] as V5
+  [Axios 统一拦截器\n（令牌注入 / 错误提示）] as V6
+}
+
+package "接口层 Controller（Spring MVC）" {
+  [AuthController] as C1
+  [BookController] as C2
+  [AiController] as C3
+  [OrderController] as C4
+  [SocialController] as C5
+}
+
+package "应用服务层 Service" {
+  [AuthService] as S1
+  [BookService] as S2
+  [AiService\nCBM-Pricing-v1] as S3
+  [OrderService] as S4
+  [SocialService] as S5
+}
+
+package "数据访问层 Repository（Spring Data JPA）" {
+  [UserRepository] as R1
+  [BookRepository] as R2
+  [OrderRepository] as R3
+  [ReviewRepository] as R4
+  [ReportRepository] as R5
+}
+
+database "MySQL 8 / H2" as DB {
+  [t_user]
+  [t_book]
+  [t_order]
+  [t_review]
+  [t_message]
+  [t_report]
+}
+
+cloud "外部服务" {
+  [校园统一认证] as EXT1
+  [LLM / OCR 服务\n（可插拔）] as EXT2
+}
+
+V1 --> V6
+V2 --> V6
+V3 --> V6
+V4 --> V6
+V5 --> V6
+V6 --> C1
+V6 --> C2
+V6 --> C3
+V6 --> C4
+V6 --> C5
+
+C1 --> S1
+C2 --> S2
+C3 --> S3
+C4 --> S4
+C5 --> S5
+
+S1 --> R1
+S2 --> R2
+S4 --> R2
+S4 --> R3
+S5 --> R4
+S5 --> R5
+S3 --> R2
+
+R1 --> DB
+R2 --> DB
+R3 --> DB
+R4 --> DB
+R5 --> DB
+
+S1 ..> EXT1 : 身份核验
+S3 ..> EXT2 : 可选增强
+
+@enduml

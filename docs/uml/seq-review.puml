@@ -1,0 +1,64 @@
+@startuml
+skinparam defaultFontName "Microsoft YaHei"
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam sequence {
+  ArrowColor #3A7AFE
+  LifeLineBorderColor #B9C6E4
+  ParticipantBackgroundColor #EEF3FF
+  ParticipantBorderColor #3A7AFE
+  ActorBackgroundColor #FFF4E6
+  ActorBorderColor #E6A23C
+}
+
+
+actor "买家" as B
+participant "OrderPage\n(边界类)" as P
+participant "OrderController" as OC
+participant "OrderService" as OS
+participant "SocialController" as SC
+participant "SocialService" as SS
+database "t_order" as DB1
+database "t_book" as DB2
+database "t_review" as DB3
+database "t_user" as DB4
+
+B -> P : 点击"确认收货"
+P -> OC : POST /api/orders/{id}/complete
+OC -> OS : complete(id, buyer)
+OS -> DB1 : select * from t_order where id = ?
+DB1 --> OS : Order(status=CONFIRMED, buyerId)
+OS -> OS : 校验操作人是否为买家
+
+alt 非本人订单 / 卖家未确认
+  OS --> OC : BusinessException(403 / 状态不合法)
+  OC --> P : {code, message}
+  P --> B : 提示失败
+else 校验通过
+  OS -> DB1 : update t_order set status='COMPLETED', finishedAt=now()
+  OS -> DB2 : update t_book set status='SOLD'
+  OS --> OC : BookOrder
+  OC --> P : ApiResponse<BookOrder>
+  P --> B : 状态变为"已完成"，出现评价入口
+end
+
+B -> P : 打 5 星并填写评价
+P -> SC : POST /api/reviews {orderId, rating, content}
+SC -> SS : review(req, buyer)
+SS -> DB1 : 校验订单已完成 & 操作人属于该订单
+SS -> DB3 : 校验是否重复评价
+SS -> DB3 : insert t_review
+SS -> DB4 : update t_user set creditScore = creditScore + 1
+DB4 --> SS : 信用分 100 → 101
+SS --> SC : Review
+SC --> P : ApiResponse<Review>
+P --> B : 提示"评价成功"
+
+note over SS
+  信用分规则：
+  rating ≥ 4 → +1（上限 120）
+  rating ≤ 2 → -2（下限 0）
+  举报成立 → 额外 -5 或直接归零
+end note
+
+@enduml
